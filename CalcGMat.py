@@ -36,8 +36,8 @@ class calcGmat:
                 print(f'atom: {atom}, coordinate {coordinate}')
                 delx=np.zeros((self.coords.shape))
                 delx[:,atom,coordinate]+=dx #perturbs the x,y,z coordinate of the atom of interest
-                coordPlus=self.intCds(self.coords+delx,eckRot=True)
-                coordMinus=self.intCds(self.coords-delx,eckRot=True)
+                coordPlus=self.intCds(self.coords+delx)
+                coordMinus=self.intCds(self.coords-delx)
                 #For 2pi stuff going from 0 to 2pi
                 coordPlus[np.abs(coordPlus - coordMinus) > 1.0] += (-1.0 * 2. * np.pi) * np.sign(coordPlus[np.abs(coordPlus - coordMinus) > 1.0])
                 partialderv=(coordPlus-coordMinus)/(2.0*dx) #Finite Diff
