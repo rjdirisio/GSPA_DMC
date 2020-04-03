@@ -1,4 +1,5 @@
 import numpy as np
+import numpy.linalg as la
 from molecularInfo import *
 from researchUtils import Constants
 

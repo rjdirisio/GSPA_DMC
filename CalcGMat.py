@@ -1,7 +1,7 @@
 import numpy as np
 from researchUtils import Constants
 
-class calcGmat:
+class Gmat:
     def __init__(self,
                  coords,
                  atoms,
@@ -11,14 +11,14 @@ class calcGmat:
         self.atoms = atoms
         self.weights = weights
         self.intCds = intCdFun
-    @classmethod
-    def calcGmats(self,dw=False):
+
+    def calcGmats(self):
         """Returns the stack of internal coordinate g-matrices that cooresponds to the geometry of interest
         @param dw: the weights for the weighted average of the gmatrix. This is used for DMC wave functions.
         Ignore otherwise
         @return:
         """
-        if dw is not None:
+        if self.weights is not None:
             avg = True
         if len(self.coords.shape) == 2:
             self.coords = np.expand_dims(self.coords,0)
@@ -44,12 +44,12 @@ class calcGmat:
                 if avg:
                     for i, pd in enumerate(partialderv): #memory constraints. loop...
                         mwpd2 = (partialderv[i, :, np.newaxis] * partialderv[i, np.newaxis, :]) / mass[atom]
-                        gnm += mwpd2 * dw[i]
+                        gnm += mwpd2 * self.weights[i]
                 else:
                     mwpd2 = (partialderv[:, :, np.newaxis] * partialderv[:, np.newaxis, :]) / mass[atom]
                     gmatz += mwpd2
         if avg:
-            gnm /= np.sum(dw)
+            gnm /= np.sum(self.weights)
             return gnm
         else:
             return gmatz
