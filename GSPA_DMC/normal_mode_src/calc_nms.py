@@ -45,5 +45,6 @@ class CalcQCoords:
         print('Eigenvalues of mass-weighted second moments:')
         print(eval)
         trans_mat = np.dot(evec.T, gm12)
+
         nms = np.matmul(trans_mat, moments.T).T
         return trans_mat, nms

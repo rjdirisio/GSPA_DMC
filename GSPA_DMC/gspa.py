@@ -10,7 +10,7 @@ class NormalModes:
                  atoms,
                  walkers,
                  descendant_weights,
-                 internal_coord_func,
+                 ic_manager,
                  atomic_units=True,
                  masses=None
                  ):
@@ -20,7 +20,7 @@ class NormalModes:
         self.dw = descendant_weights
         self.atomic_units = atomic_units
         self.masses = masses
-        self.coordinate_func = internal_coord_func
+        self.coordinate_func = ic_manager
         self._initialize()
 
     def _initialize(self):
@@ -29,27 +29,40 @@ class NormalModes:
         if self.masses is None:
             self.masses = np.array([Constants.mass(a) for a in self.atoms])
         self.num_atoms = len(self.atoms)
-        if self.num_atoms > 3:
-            self.num_vibs = 3 * self.num_atoms - 6
-        else:
-            raise Exception("WARNING: FEWER THAN 3 ATOMS ENTERED. ARE YOU SURE YOU WANT TO DO THIS?")
+        self.num_vibs = 3 * self.num_atoms - 6
 
     def calc_gmat(self):
         print('Begin Calculation of G-Matrix...')
-        this_gmat, internals = Gmat(coords=self.coords,
+        this_gmat = Gmat(coords=self.coords,
                                     masses=self.masses,
                                     num_vibs=self.num_vibs,
                                     dw=self.dw,
                                     coordinate_func=self.coordinate_func)
-        avg_gmat = this_gmat.run()
+        avg_gmat, internals = this_gmat.run()
         np.save(f"{self.run_name}_gmat.npy", avg_gmat)
-        int_cds = self.coordinate_func(self.coords)
+        int_cds = self.coordinate_func.get_ints(self.coords)
         return avg_gmat, int_cds
+
+    def save_assignments(self,trans_mat):
+        written_tmat = np.copy(trans_mat)
+        with open(f'{self.run_name}_assignments.txt','w') as assign_f:
+            for i, vec in enumerate(written_tmat):
+                assign_f.write("%d\n" % i)
+                new_vec = np.abs(vec) / np.max(np.abs(vec))
+                sort_vec_idx = np.argsort(new_vec)[::-1]
+                sorted_vec = vec[sort_vec_idx]
+                name = self.coordinate_func.get_int_names()
+                sorted_name = [name[i] for i in sort_vec_idx]
+                for hu in range(self.num_vibs):
+                    assign_f.write("%s %d %5.12f " % (sorted_name[hu], sort_vec_idx[hu], sorted_vec[hu]))
+                assign_f.write('\n \n')
+            assign_f.close()
 
     def calc_normal_modes(self, gmat, internal_coordinates, save_nms=True):
         print('Begin Calculation of Normal Modes...')
         my_calc_q = CalcQCoords(gmat, internal_coordinates, self.dw)
         transformation_matrix, nms = my_calc_q.run()
+        self.save_assignments(transformation_matrix)
         if save_nms:
             np.save(f"{self.run_name}_nms.npy", nms)
             np.save(f"{self.run_name}_trans_mat.npy", transformation_matrix)
