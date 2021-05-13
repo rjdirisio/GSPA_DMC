@@ -73,23 +73,30 @@ class GSPA:
     def __init__(self,
                  run_name,
                  normal_modes,
+                 desc_weights,
                  potential_energies,
                  dipoles,
                  ham_overlap):
         self.run_name = run_name
         self.nms = normal_modes
+        self.desc_weights = desc_weights
         self.vs = potential_energies
         self.dips = dipoles
         self.ham = ham_overlap
 
     def run(self):
         print('Begin GSPA Approximation Code...')
-        my_eng = CalcEngsInts(nms=self.normal_modes,
+        my_eng = CalcEngsInts(nms=self.nms,
                               potentials=self.vs,
-                              dipoles=self.dips,
-                              ham_overlap=self.ham)
+                              desc_weights=self.desc_weights,
+                              dipoles=self.dips)
         if not self.ham:
             energies, intensities = my_eng.run()
+            labz = ['Fundamentals', 'Overtones','Combinations']
+            for eng_num, eng in enumerate(energies):
+                eng = Constants.convert(eng, 'wavenumbers', to_AU=False)
+                print(f'{labz[eng_num]}:')
+                print(eng)
             np.save(f'{self.run_name}_energies.npy', energies)
             np.save(f'{self.run_name}_intensities.npy', intensities)
         else:
