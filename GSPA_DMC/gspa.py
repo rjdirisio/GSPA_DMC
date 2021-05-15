@@ -1,12 +1,14 @@
 from .normal_mode_src import *
 from .gspa_src import *
 
+import os,sys
+
 from pyvibdmc.simulation_utilities import Constants
 
 
 class NormalModes:
     def __init__(self,
-                 run_name,
+                 res_dir,
                  atoms,
                  walkers,
                  descendant_weights,
@@ -14,7 +16,8 @@ class NormalModes:
                  atomic_units=True,
                  masses=None
                  ):
-        self.run_name = run_name
+
+        self.res_dir = res_dir
         self.atoms = atoms
         self.coords = walkers
         self.dw = descendant_weights
@@ -24,10 +27,15 @@ class NormalModes:
         self._initialize()
 
     def _initialize(self):
+        # Make directory where results will be
+        if not os.path.isdir(self.res_dir):
+            os.makedirs(self.res_dir)
+        # Masses and atoms
         if not self.atomic_units:
             self.coords = Constants.convert(self.coords, 'angstroms', to_AU=True)
         if self.masses is None:
             self.masses = np.array([Constants.mass(a) for a in self.atoms])
+        # Useful variables that don't need to be recalculated all the time
         self.num_atoms = len(self.atoms)
         self.num_vibs = 3 * self.num_atoms - 6
 
@@ -39,13 +47,13 @@ class NormalModes:
                                     dw=self.dw,
                                     coordinate_func=self.coordinate_func)
         avg_gmat, internals = this_gmat.run()
-        np.save(f"{self.run_name}_gmat.npy", avg_gmat)
+        np.save(f"{self.res_dir}/gmat.npy", avg_gmat)
         int_cds = self.coordinate_func.get_ints(self.coords)
         return avg_gmat, int_cds
 
     def save_assignments(self,trans_mat):
         written_tmat = np.copy(trans_mat)
-        with open(f'{self.run_name}_assignments.txt','w') as assign_f:
+        with open(f'{self.res_dir}/assignments.txt','w') as assign_f:
             for i, vec in enumerate(written_tmat):
                 assign_f.write("%d\n" % i)
                 new_vec = np.abs(vec) / np.max(np.abs(vec))
@@ -64,20 +72,20 @@ class NormalModes:
         transformation_matrix, nms = my_calc_q.run()
         self.save_assignments(transformation_matrix)
         if save_nms:
-            np.save(f"{self.run_name}_nms.npy", nms)
-            np.save(f"{self.run_name}_trans_mat.npy", transformation_matrix)
+            np.save(f"{self.res_dir}/nms.npy", nms)
+            np.save(f"{self.res_dir}/trans_mat.npy", transformation_matrix)
         return nms
 
 
 class GSPA:
     def __init__(self,
-                 run_name,
+                 res_dir,
                  normal_modes,
                  desc_weights,
                  potential_energies,
                  dipoles,
                  ham_overlap):
-        self.run_name = run_name
+        self.res_dir = res_dir
         self.nms = normal_modes
         self.desc_weights = desc_weights
         self.vs = potential_energies
@@ -97,12 +105,9 @@ class GSPA:
                 eng = Constants.convert(eng, 'wavenumbers', to_AU=False)
                 print(f'{labz[eng_num]}:')
                 print(eng)
-            np.save(f'{self.run_name}_energies.npy', energies)
-            np.save(f'{self.run_name}_intensities.npy', intensities)
+            np.save(f'{self.res_dir}/energies.npy', energies)
+            np.save(f'{self.res_dir}/intensities.npy', intensities)
         else:
-            energies, intensities, overlap, ham = my_eng.run()
-            np.save(f'{self.run_name}_energies.npy', energies)
-            np.save(f'{self.run_name}_intensities.npy', intensities)
-            np.save(f'{self.run_name}_ov_mat.npy', overlap)
-            np.save(f'{self.run_name}_ham_mat.npy', ham)
-        print('Done.')
+            overlap, hamiltonian = my_eng.calc_ham_mat()
+            np.save(f'{self.res_dir}/overlap_mat.npy', overlap)
+            np.save(f'{self.res_dir}/ham_mat.npy', overlap)

@@ -14,6 +14,7 @@ def umbrella_angle(cds, center, outer_1, outer_2, outer_3):
     # vectors between the points along the OH bonds that are 1 unit vector away from the O
     un_12 = vec_2 - vec_1
     un_23 = vec_3 - vec_2
+    #Cross product, need arb. def. of which two are going to be the two that decide if the umbrella is btw 0-90 and 90-180
     line = np.cross(un_12, un_23, axis=1)
     # add normalized vector to O
     spot = line / la.norm(line, axis=1)[:, np.newaxis]
@@ -36,6 +37,5 @@ def h3o_internals(cds):
     angle_1 = 2 * hoh1 - hoh2 - hoh3
     angle_2 = hoh2 - hoh3
     umbrella = umbrella_angle(cds, 3, 0, 1, 2)
-    h3o = np.array([roh1, roh2, roh3, angle_1, angle_2, umbrella]).T
-    h3o_name = ['ROH_1','ROH_2','ROH_3','2Th_1-Th2-Th3','Th2-Th3','Umb']
+    h3o = np.array([roh1, roh2, roh3, umbrella, angle_1, angle_2, ]).T
     return h3o
