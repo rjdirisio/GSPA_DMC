@@ -14,17 +14,23 @@ class CalcEngsInts:
         self._initialize()
 
     def _initialize(self):
+        # Useful exp vals to store
         self.expv_q2 = np.average(self.q ** 2, weights=self.dw, axis=0)
         self.expv_q4 = np.average(self.q ** 4, weights=self.dw, axis=0)
         self.expv_q8 = np.average(self.q ** 8, weights=self.dw, axis=0)
         self.v0 = np.average(self.vs, weights=self.dw)
+        # Overtone polynomials + exp val
+        a = -1 / self.expv_q2
+        b = np.average(self.q ** 3 / self.expv_q2, axis=0, weights=self.dw) * (1 / self.expv_q2)
+        self.overtone_poly = a * self.q ** 2 + b * self.q + 1
+        self.expv_over2 = np.average(self.overtone_poly ** 2, axis=0, weights=self.dw)
 
     def kinetic_one_quantum(self):
         beta = self.expv_q2 / (self.expv_q4 - self.expv_q2 ** 2)
         return beta / 2
 
     def kinetic_two_quanta(self):
-        beta = 8 * self.expv_q4 / (self.expv_q8 - self.expv_q4 ** 2)
+        beta = np.sqrt(8 * self.expv_q4 / (self.expv_q8 - self.expv_q4 ** 2))
         return 2 * beta / 2
 
     def calc_funds(self):
@@ -38,11 +44,8 @@ class CalcEngsInts:
 
     def calc_overtones(self):
         # Calculate <V_2> - <V_0>
-        a = -1 / self.expv_q2
-        b = np.average(self.q ** 3 / self.expv_q2, axis=0, weights=self.dw) * (1 / self.expv_q2)
-        overtone_poly = a * self.q ** 2 + b * self.q + 1
-        over_v = np.average(overtone_poly * self.vs[:,None] * overtone_poly, axis=0, weights=self.dw) / \
-                 np.average(overtone_poly ** 2, axis=0, weights=self.dw)
+        over_v = np.average(self.overtone_poly * self.vs[:,None] * self.overtone_poly, axis=0, weights=self.dw) / \
+                 self.expv_over2
         over_dv = over_v - self.v0
         # Calculate <T_1> - <T_0>
         over_dt = self.kinetic_two_quanta()
@@ -68,9 +71,26 @@ class CalcEngsInts:
         return funds, overs, combos
 
     def calc_ints(self):
-        dip = self.dips
-        intensities = []
-        return intensities
+        # <1 | u | 0>
+        fund_mus = np.average(self.q[:,np.newaxis,:] * self.dips[:,:,np.newaxis], weights=self.dw, axis=0)
+        fund_mus /= np.sqrt(self.expv_q2)
+        fund_ints = np.linalg.norm(fund_mus, axis=0)**2
+
+        # <2 | u | 0 >
+        over_mus = np.average(self.overtone_poly[:,np.newaxis,:] * self.dips[:,:,np.newaxis], weights=self.dw, axis=0)
+        over_mus /= np.sqrt(self.expv_over2)
+        over_ints = np.linalg.norm(over_mus, axis=0) ** 2
+
+        # < 1,1 | U | 0 >
+        combo_ints = []
+        all_combos = itt.combinations(range(len(self.q.T)), 2)
+        for combo_1, combo_2 in all_combos:
+            q1xq2 = self.q[:, combo_1] * self.q[:, combo_2]
+            combo_mu = np.average(q1xq2[:,np.newaxis]* self.dips , axis=0, weights=self.dw) / \
+                      np.sqrt(np.average(q1xq2**2, weights=self.dw))
+            combo_ints.append(np.linalg.norm(combo_mu)**2)
+        combo_ints = np.array(combo_ints)
+        return fund_ints, over_ints, combo_ints
 
     def run(self):
         energies = self.calc_freqs()

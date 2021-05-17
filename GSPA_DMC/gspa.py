@@ -104,10 +104,18 @@ class GSPA:
             for eng_num, eng in enumerate(energies):
                 eng = Constants.convert(eng, 'wavenumbers', to_AU=False)
                 print(f'{labz[eng_num]}:')
-                print(eng)
-            np.save(f'{self.res_dir}/energies.npy', energies)
-            np.save(f'{self.res_dir}/intensities.npy', intensities)
+                print(np.column_stack((eng, intensities[eng_num])))
+
+            np.savez(f'{self.res_dir}/energies.npz',
+                     funds=energies[0],
+                     overs=energies[1],
+                     combos=energies[2])
+            np.savez(f'{self.res_dir}/intensities.npz',
+                     funds=intensities[0],
+                     overs=intensities[1],
+                     combos=intensities[2])
         else:
             overlap, hamiltonian = my_eng.calc_ham_mat()
-            np.save(f'{self.res_dir}/overlap_mat.npy', overlap)
-            np.save(f'{self.res_dir}/ham_mat.npy', overlap)
+            np.savez(f'{self.res_dir}/ov_ham.npz',
+                     ov=overlap,
+                     ham=hamiltonian)

@@ -21,6 +21,4 @@ def test_freqs():
                    dipoles=eng_dip[:, 1:],
                    ham_overlap=False)
     my_gspa.run()
-    engs = np.load('test_h3o/energies.npy')
-    print(engs)
     assert True
