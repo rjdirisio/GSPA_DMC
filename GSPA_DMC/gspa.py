@@ -29,7 +29,10 @@ class NormalModes:
     def _initialize(self):
         # Make directory where results will be
         if not os.path.isdir(self.res_dir):
+            print('No red_dir found. creating...')
             os.makedirs(self.res_dir)
+        if not os.path.isdir(f'{self.res_dir}/red_ham/'):
+            os.makedirs(f'{self.res_dir}/red_ham/')
         # Masses and atoms
         if not self.atomic_units:
             self.coords = Constants.convert(self.coords, 'angstroms', to_AU=True)
@@ -91,6 +94,14 @@ class GSPA:
         self.vs = potential_energies
         self.dips = dipoles
         self.ham = ham_overlap
+        self._initialize()
+
+    def _initialize(self):
+        if not os.path.isdir(self.res_dir):
+            print('No red_dir found. creating...')
+            os.makedirs(self.res_dir)
+        if not os.path.isdir(f'{self.res_dir}/red_ham/'):
+            os.makedirs(f'{self.res_dir}/red_ham/')
 
     def run(self):
         print('Begin GSPA Approximation Code...')
@@ -98,24 +109,26 @@ class GSPA:
                               potentials=self.vs,
                               desc_weights=self.desc_weights,
                               dipoles=self.dips)
-        if not self.ham:
-            energies, intensities = my_eng.run()
-            labz = ['Fundamentals', 'Overtones','Combinations']
-            for eng_num, eng in enumerate(energies):
-                eng = Constants.convert(eng, 'wavenumbers', to_AU=False)
-                print(f'{labz[eng_num]}:')
-                print(np.column_stack((eng, intensities[eng_num])))
+        energies, intensities, mus = my_eng.run()
 
-            np.savez(f'{self.res_dir}/energies.npz',
-                     funds=energies[0],
-                     overs=energies[1],
-                     combos=energies[2])
-            np.savez(f'{self.res_dir}/intensities.npz',
-                     funds=intensities[0],
-                     overs=intensities[1],
-                     combos=intensities[2])
-        else:
+        labz = ['Fundamentals', 'Overtones','Combinations']
+        for eng_num, eng in enumerate(energies):
+            eng = Constants.convert(eng, 'wavenumbers', to_AU=False)
+            print(f'{labz[eng_num]}:')
+            print(np.column_stack((eng, intensities[eng_num])))
+
+        np.savez(f'{self.res_dir}/energies.npz',
+                 funds=energies[0],
+                 overs=energies[1],
+                 combos=energies[2])
+        np.savez(f'{self.res_dir}/intensities.npz',
+                 funds=intensities[0],
+                 overs=intensities[1],
+                 combos=intensities[2])
+
+        if self.ham:
             overlap, hamiltonian = my_eng.calc_ham_mat()
-            np.savez(f'{self.res_dir}/ov_ham.npz',
+            np.savez(f'{self.res_dir}/red_ham/ov_ham.npz',
                      ov=overlap,
-                     ham=hamiltonian)
+                     ham=hamiltonian,
+                     mus=mus)

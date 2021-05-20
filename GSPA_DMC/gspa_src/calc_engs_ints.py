@@ -24,6 +24,8 @@ class CalcEngsInts:
         b = np.average(self.q ** 3 / self.expv_q2, axis=0, weights=self.dw) * (1 / self.expv_q2)
         self.overtone_poly = a * self.q ** 2 + b * self.q + 1
         self.expv_over2 = np.average(self.overtone_poly ** 2, axis=0, weights=self.dw)
+        # Combionation states
+        self.all_combos = list(itt.combinations(range(len(self.q.T)), 2))
 
     def kinetic_one_quantum(self):
         beta = self.expv_q2 / (self.expv_q4 - self.expv_q2 ** 2)
@@ -53,10 +55,10 @@ class CalcEngsInts:
         return overtones
 
     def calc_combos(self):
-        all_combos = itt.combinations(range(len(self.q.T)), 2)
+
         combo_tot = []
         fund_dts = self.kinetic_one_quantum()
-        for combo_1, combo_2 in all_combos:
+        for combo_1, combo_2 in self.all_combos:
             q1xq2 = self.q[:, combo_1] * self.q[:, combo_2]
             combo_v = np.average(q1xq2 * self.vs * q1xq2, weights=self.dw) / \
                       np.average(q1xq2**2, weights=self.dw)
@@ -83,16 +85,25 @@ class CalcEngsInts:
 
         # < 1,1 | U | 0 >
         combo_ints = []
-        all_combos = itt.combinations(range(len(self.q.T)), 2)
-        for combo_1, combo_2 in all_combos:
+        combo_mus = []
+        for combo_1, combo_2 in self.all_combos:
             q1xq2 = self.q[:, combo_1] * self.q[:, combo_2]
             combo_mu = np.average(q1xq2[:,np.newaxis]* self.dips , axis=0, weights=self.dw) / \
                       np.sqrt(np.average(q1xq2**2, weights=self.dw))
+            combo_mus.append(combo_mu)
             combo_ints.append(np.linalg.norm(combo_mu)**2)
+        combo_mus = np.array(combo_mus)
         combo_ints = np.array(combo_ints)
-        return fund_ints, over_ints, combo_ints
+        return (fund_ints, over_ints, combo_ints), np.vstack((fund_mus.T, over_mus.T, combo_mus))
 
     def run(self):
         energies = self.calc_freqs()
-        intensities = self.calc_ints()
-        return energies, intensities
+        intensities, mus = self.calc_ints()
+        return energies, intensities, mus
+
+
+    def calc_ham_mat(self):
+        from .calc_hamiltonian import CalcHamOverlap
+        this_ham = CalcHamOverlap(self)
+        overlap, ham = this_ham.run()
+        return overlap, ham
