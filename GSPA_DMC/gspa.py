@@ -1,7 +1,8 @@
 from .normal_mode_src import *
 from .gspa_src import *
 
-import os,sys
+import os
+import itertools as itt
 
 from pyvibdmc.simulation_utilities import Constants
 
@@ -29,7 +30,7 @@ class NormalModes:
     def _initialize(self):
         # Make directory where results will be
         if not os.path.isdir(self.res_dir):
-            print('No red_dir found. creating...')
+            print('No res_dir found. creating...')
             os.makedirs(self.res_dir)
         if not os.path.isdir(f'{self.res_dir}/red_ham/'):
             os.makedirs(f'{self.res_dir}/red_ham/')
@@ -98,10 +99,18 @@ class GSPA:
 
     def _initialize(self):
         if not os.path.isdir(self.res_dir):
-            print('No red_dir found. creating...')
+            print('No res_dir found. creating...')
             os.makedirs(self.res_dir)
         if not os.path.isdir(f'{self.res_dir}/red_ham/'):
             os.makedirs(f'{self.res_dir}/red_ham/')
+
+    def assignment_order(self):
+        num_modes = len(self.nms.T)
+        fund_assign = np.column_stack((np.arange(num_modes), np.array(np.repeat(999,num_modes))))
+        over_assign = np.column_stack((np.arange(num_modes), (np.arange(num_modes))))
+        combo_assign = np.array(list(itt.combinations(range(num_modes), 2)))
+        assignments_ordering = np.concatenate((fund_assign,over_assign,combo_assign))
+        return assignments_ordering
 
     def run(self):
         print('Begin GSPA Approximation Code...')
@@ -112,22 +121,27 @@ class GSPA:
         energies, intensities, mus = my_eng.run()
 
         labz = ['Fundamentals', 'Overtones','Combinations']
+        energies_wvn = []
         for eng_num, eng in enumerate(energies):
             eng = Constants.convert(eng, 'wavenumbers', to_AU=False)
+            energies_wvn.append(eng)
             print(f'{labz[eng_num]}:')
             print(np.column_stack((eng, intensities[eng_num])))
 
         np.savez(f'{self.res_dir}/energies.npz',
-                 funds=energies[0],
-                 overs=energies[1],
-                 combos=energies[2])
+                 funds=energies_wvn[0],
+                 overs=energies_wvn[1],
+                 combos=energies_wvn[2])
         np.savez(f'{self.res_dir}/intensities.npz',
                  funds=intensities[0],
                  overs=intensities[1],
                  combos=intensities[2])
 
+        np.save(f'{self.res_dir}/assign_order.npy',
+                self.assignment_order())
+
         if self.ham:
-            overlap, hamiltonian = my_eng.calc_ham_mat()
+            overlap, hamiltonian = my_eng.calc_ham_mat(energies_wvn)
             np.savez(f'{self.res_dir}/red_ham/ov_ham.npz',
                      ov=overlap,
                      ham=hamiltonian,

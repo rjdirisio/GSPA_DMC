@@ -9,4 +9,11 @@ __pycache__/
 
 # Molecular Data
 *.npy
+*.npz
+*.txt
 *.xyz
+
+# Other
+*.png
+*.pdf
+*.datatest

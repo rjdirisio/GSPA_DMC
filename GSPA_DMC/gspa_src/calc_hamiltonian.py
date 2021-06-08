@@ -4,11 +4,15 @@ import numpy as np
 
 
 class CalcHamOverlap:
-    def __init__(self, eng_obj):
+    def __init__(self, eng_obj, energies):
         self.eng_obj = eng_obj
+        self.energies = energies
         self._initialize()
 
     def _initialize(self):
+        """
+        Calculate important quantities and extract data from eng_obj
+        """
         self.num_vibs = len(self.eng_obj.q.T)
         self.combo_inds = np.array(self.eng_obj.all_combos)
         self.num_combos = len(self.combo_inds)
@@ -22,7 +26,6 @@ class CalcHamOverlap:
         self.block_inds = np.arange(self.num_vibs)
 
     def fund_funds(self):
-        """Funds with themselves"""
         # On diags
         self.overlap_mat[self.block_inds, self.block_inds] = np.average(self.q ** 2, axis=0, weights=self.dw)
         # Off diags
@@ -92,14 +95,20 @@ class CalcHamOverlap:
         self.over_overs()
         self.over_combos()
         self.combo_combos()
-        # Ham mat is missing second term: <P*V*P> - <V><P*P>
-        self.ham_mat -= self.eng_obj.v0 * self.overlap_mat  # check this
         # Add normalization
         diag_ov = np.copy(np.diagonal(self.overlap_mat))
         self.overlap_mat = self.overlap_mat/np.sqrt(diag_ov[:,np.newaxis])
         self.overlap_mat = self.overlap_mat/np.sqrt(diag_ov)
         self.overlap_mat = self.overlap_mat + self.overlap_mat.T - np.eye(len(self.overlap_mat))
+        # Ham mat cleanup with normalization
         self.ham_mat = self.ham_mat/np.sqrt(diag_ov[:,np.newaxis])
         self.ham_mat = self.ham_mat/np.sqrt(diag_ov)
         self.ham_mat = self.ham_mat + self.ham_mat.T
+        # Ham mat is missing second term: <P*V*P> - <V><P*P>
+        msk = np.copy(self.overlap_mat)
+        msk = msk * self.eng_obj.v0
+        np.fill_diagonal(msk, np.zeros(len(msk)))
+        self.ham_mat = self.ham_mat - msk
+        # Put in transition frequencies
+        np.fill_diagonal(self.ham_mat,np.concatenate(self.energies))
         return self.overlap_mat, self.ham_mat

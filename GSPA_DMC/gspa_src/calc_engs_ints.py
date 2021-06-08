@@ -102,8 +102,8 @@ class CalcEngsInts:
         return energies, intensities, mus
 
 
-    def calc_ham_mat(self):
+    def calc_ham_mat(self,energies):
         from .calc_hamiltonian import CalcHamOverlap
-        this_ham = CalcHamOverlap(self)
+        this_ham = CalcHamOverlap(self, energies)
         overlap, ham = this_ham.run()
         return overlap, ham
