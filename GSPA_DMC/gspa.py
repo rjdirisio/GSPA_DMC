@@ -43,7 +43,7 @@ class NormalModes:
         self.num_atoms = len(self.atoms)
         self.num_vibs = 3 * self.num_atoms - 6
 
-    def calc_gmat(self):
+    def _calc_gmat(self):
         print('Begin Calculation of G-Matrix...')
         this_gmat = Gmat(coords=self.coords,
                                     masses=self.masses,
@@ -55,7 +55,7 @@ class NormalModes:
         int_cds = self.coordinate_func.get_ints(self.coords)
         return avg_gmat, int_cds
 
-    def save_assignments(self,trans_mat):
+    def _save_assignments(self,trans_mat):
         written_tmat = np.copy(trans_mat)
         with open(f'{self.res_dir}/assignments.txt','w') as assign_f:
             for i, vec in enumerate(written_tmat):
@@ -74,7 +74,7 @@ class NormalModes:
         print('Begin Calculation of Normal Modes...')
         my_calc_q = CalcQCoords(gmat, internal_coordinates, self.dw)
         transformation_matrix, nms = my_calc_q.run()
-        self.save_assignments(transformation_matrix)
+        self._save_assignments(transformation_matrix)
         if save_nms:
             np.save(f"{self.res_dir}/nms.npy", nms)
             np.save(f"{self.res_dir}/trans_mat.npy", transformation_matrix)
@@ -88,13 +88,15 @@ class GSPA:
                  desc_weights,
                  potential_energies,
                  dipoles,
-                 ham_overlap):
+                 ham_overlap,
+                 text_file=True):
         self.res_dir = res_dir
         self.nms = normal_modes
         self.desc_weights = desc_weights
         self.vs = potential_energies
         self.dips = dipoles
         self.ham = ham_overlap
+        self.text_file = text_file
         self._initialize()
 
     def _initialize(self):
@@ -104,13 +106,23 @@ class GSPA:
         if not os.path.isdir(f'{self.res_dir}/red_ham/'):
             os.makedirs(f'{self.res_dir}/red_ham/')
 
-    def assignment_order(self):
+    def _assignment_order(self):
         num_modes = len(self.nms.T)
         fund_assign = np.column_stack((np.arange(num_modes), np.array(np.repeat(999,num_modes))))
         over_assign = np.column_stack((np.arange(num_modes), (np.arange(num_modes))))
         combo_assign = np.array(list(itt.combinations(range(num_modes), 2)))
         assignments_ordering = np.concatenate((fund_assign,over_assign,combo_assign))
         return assignments_ordering
+
+    def _write_text(self,energies_wvn,intensities,assignment_order):
+        energies_wvn_tot = np.concatenate(energies_wvn)
+        print(energies_wvn_tot)
+        intensities_tot = np.concatenate(intensities)
+        with open(f'{self.res_dir}/all_transitions.txt','w') as fll:
+            fll.write(f'E\t I\t Assign_1  Assign_2\n')
+            for i in range(len(energies_wvn_tot)):
+                fll.write(f'{energies_wvn_tot[i]}\t {intensities_tot[i]}\t {assignment_order[i][0]}  {assignment_order[i][1]}\n')
+
 
     def run(self):
         print('Begin GSPA Approximation Code...')
@@ -136,9 +148,12 @@ class GSPA:
                  funds=intensities[0],
                  overs=intensities[1],
                  combos=intensities[2])
-
+        assignment_order = self._assignment_order()
         np.save(f'{self.res_dir}/assign_order.npy',
-                self.assignment_order())
+                assignment_order)
+
+        if self.text_file:
+            self._write_text(energies_wvn, intensities, assignment_order)
 
         if self.ham:
             overlap, hamiltonian = my_eng.calc_ham_mat(energies_wvn)

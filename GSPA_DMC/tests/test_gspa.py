@@ -30,7 +30,8 @@ def test_mixing():
                         assignments=assignments,
                         energy_range=[1000,4000],
                         dip_matels=dipole_matels)
-    new_freqs, new_intensities = my_mix.run()
+    new_freqs, new_intensities, chunk = my_mix.run()
+    assert True
 
 # def test_analyze_ov():
 #     import matplotlib.pyplot as plt
