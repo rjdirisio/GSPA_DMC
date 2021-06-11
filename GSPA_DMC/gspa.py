@@ -43,18 +43,6 @@ class NormalModes:
         self.num_atoms = len(self.atoms)
         self.num_vibs = 3 * self.num_atoms - 6
 
-    def _calc_gmat(self):
-        print('Begin Calculation of G-Matrix...')
-        this_gmat = Gmat(coords=self.coords,
-                                    masses=self.masses,
-                                    num_vibs=self.num_vibs,
-                                    dw=self.dw,
-                                    coordinate_func=self.coordinate_func)
-        avg_gmat, internals = this_gmat.run()
-        np.save(f"{self.res_dir}/gmat.npy", avg_gmat)
-        int_cds = self.coordinate_func.get_ints(self.coords)
-        return avg_gmat, int_cds
-
     def _save_assignments(self,trans_mat):
         written_tmat = np.copy(trans_mat)
         with open(f'{self.res_dir}/assignments.txt','w') as assign_f:
@@ -69,6 +57,18 @@ class NormalModes:
                     assign_f.write("%s %d %5.12f " % (sorted_name[hu], sort_vec_idx[hu], sorted_vec[hu]))
                 assign_f.write('\n \n')
             assign_f.close()
+
+    def calc_gmat(self):
+        print('Begin Calculation of G-Matrix...')
+        this_gmat = Gmat(coords=self.coords,
+                                    masses=self.masses,
+                                    num_vibs=self.num_vibs,
+                                    dw=self.dw,
+                                    coordinate_func=self.coordinate_func)
+        avg_gmat, internals = this_gmat.run()
+        np.save(f"{self.res_dir}/gmat.npy", avg_gmat)
+        int_cds = self.coordinate_func.get_ints(self.coords)
+        return avg_gmat, int_cds
 
     def calc_normal_modes(self, gmat, internal_coordinates, save_nms=True):
         print('Begin Calculation of Normal Modes...')

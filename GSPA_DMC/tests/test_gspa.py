@@ -1,6 +1,6 @@
 import pytest
-from GSPA_DMC import *
-import matplotlib.pyplot as plt
+from GSPA_DMC import GSPA, MixedStates
+import numpy as np
 
 dws = np.load('h3o_data/ffinal_h3o_dw.npy')
 eng_dip = np.load("h3o_data/eng_dip_ffinal_h3o_eckart.npy")

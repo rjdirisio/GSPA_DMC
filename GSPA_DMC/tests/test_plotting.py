@@ -1,7 +1,6 @@
 import pytest
 from GSPA_DMC import *
-import matplotlib.pyplot as plt
-
+import numpy as np
 
 def test_reg_plot():
     keyz = ['funds', 'overs', 'combos']

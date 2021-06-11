@@ -65,7 +65,7 @@ class MixedStates:
             contribs.write(f'{new_freqs[nevs]:.3f}, {new_intensities[nevs]}\n ')
             for each_state in range(5):  # top 5 states
                 contribs.write(
-                    f"{state_assign[each_state][0]} {state_assign[each_state][1]}, {evecs_sorted[each_state, nevs]:.3f}")
+                    f"{state_assign[each_state][0]} {state_assign[each_state][1]}, {evecs_sorted[each_state, nevs]:.3f}; ")
             contribs.write("\n")
         contribs.close()
 

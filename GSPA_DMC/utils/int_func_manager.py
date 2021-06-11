@@ -8,6 +8,13 @@ class InternalCoordinateManager:
                  int_directory,
                  python_file,
                  int_names):
+        """
+
+        :param int_function: The function in the example.py file you created that returns the 3n-6 coordinates of all walkers
+        :param int_directory: The directory in which example.py lives in
+        :param python_file: The python file 'example.py'
+        :param int_names: A list of strings describing the internal coordinates. Will be used for assignments.txt
+        """
         self.int_func = int_function
         self.pyFile = python_file
         self.int_dir = int_directory

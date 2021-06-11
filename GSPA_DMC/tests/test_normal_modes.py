@@ -1,7 +1,6 @@
 import pytest
 from GSPA_DMC import *
-import matplotlib.pyplot as plt
-
+import numpy as np
 
 h3o_internals = InternalCoordinateManager(
     int_function='h3o_internals',
@@ -18,7 +17,7 @@ def test_gmat():
                         walkers=cds,
                         descendant_weights=dws,
                         ic_manager=h3o_internals)
-    gmat, my_internals = norms._calc_gmat()
+    gmat, my_internals = norms.calc_gmat()
     np.save("test_h3o/internals.npy", my_internals)
     assert True
 
