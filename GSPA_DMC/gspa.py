@@ -64,6 +64,8 @@ class NormalModes:
         if int_cds.shape[1] != self.num_vibs: #num_walkers x three_n_minus_6
             print(f"WARNING: Internal coordinates are NOT num_walkers x 3n-6. Instead, it's {int_cds.shape}")
             print(f"Make sure that you are doing a reduced dimensional calculation. Otherwise, FIX!!!!")
+            self.num_vibs = int_cds.shape[1]
+
         print('Begin Calculation of G-Matrix...')
         this_gmat = Gmat(coords=self.coords,
                                     masses=self.masses,
