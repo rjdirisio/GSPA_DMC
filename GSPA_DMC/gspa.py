@@ -59,6 +59,11 @@ class NormalModes:
             assign_f.close()
 
     def calc_gmat(self):
+        print("Calculating internal coordinates for r-<r>")
+        int_cds = self.coordinate_func.get_ints(self.coords)
+        if int_cds.shape[1] != self.num_vibs: #num_walkers x three_n_minus_6
+            print(f"WARNING: Internal coordinates are NOT num_walkers x 3n-6. Instead, it's {int_cds.shape}")
+            print(f"Make sure that you are doing a reduced dimensional calculation. Otherwise, FIX!!!!")
         print('Begin Calculation of G-Matrix...')
         this_gmat = Gmat(coords=self.coords,
                                     masses=self.masses,
@@ -67,7 +72,6 @@ class NormalModes:
                                     coordinate_func=self.coordinate_func)
         avg_gmat, internals = this_gmat.run()
         np.save(f"{self.res_dir}/gmat.npy", avg_gmat)
-        int_cds = self.coordinate_func.get_ints(self.coords)
         return avg_gmat, int_cds
 
     def calc_normal_modes(self, gmat, internal_coordinates, save_nms=True):

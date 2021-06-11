@@ -18,7 +18,7 @@ This code requires:
 
 1. NumPy
 2. SciPy
-3. [pyvibdmc](https://github.com/rjdirisio/pyvibdmc)
+3. [PyVibDMC](https://github.com/rjdirisio/pyvibdmc)
 4. Matplotlib (Plotting spectra only)
 
 
@@ -168,7 +168,7 @@ This can be an absolute or relative path to the directory of interest. If the di
  You can also pass in custom `masses`, or if you are struggling with the bohr/angstrom conversion you can pass in the
  `atomic_units=False` argument to `NormalModes` as well, which converts the input to bohr from angstroms.
 
-#### Quickly Projecting $\Psi^2$ onto your Internal Coordinates
+#### Quickly Projecting the DMC Probability Amplitude onto your Internal Coordinates
 `calc_gmat()` also returns the internal coordinates. At this point, you can project these `Psi^2` onto one of these 
 internal coordinates to see how they look:
 
@@ -210,11 +210,12 @@ The assignments that correspond to the q coordinates are sensitive to subtleties
 you will not get equal contribution from each of the OH bond lengths in H3O+ for the symmetric stretch if you just use 
 a regular, unmodified set of DMC wave functions. To compensate for this, it is good practice to _symmetrize_ the wave function.
 This typically entails making copies of the walker of interest when you swap equivalent atoms. In H3O+, you want to make 
-sure that it doesn't mater which hydrogen is called "1" or "2" or "3". The projection of $\Psi^2$ onto one of the 
+sure that it doesn't mater which hydrogen is called "1" or "2" or "3". The projection of the probability amplitude onto one of the 
 OH bond lengths should look _exactly_ like the other two. The way to do this is swap what is called "1" with "2", 
 "2" with "3", and "1" with "3" and so on. GSPA_DMC has a built in `Symmetrize` object that can help with this process:
 
 ```python
+from GSPA_DMC import SymmetrizeWfn as symm
 # new_cds is 2x the size of cds
 # Copy, then swap atom 0 with atom 1
 new_cds, new_dws = symm.swap_two_atoms(cds, dws, atm_1=0,atm_2=1)
@@ -229,6 +230,10 @@ new_cds4, new_dws4 = symm.reflect_about_xyp(cds, dws)
 final_cds = np.concatenate((cds, new_cds,new_cds2,new_cds3,new_cds4...))
 final_dws = np.concatenate((cds, new_dws,new_dws2,new_dws3,new_cds4...))
 ``` 
+
+Of course, if you do _symmetrize_ the wave function, it is recommended to recalculate the G-matrix and q coordinates.
+It is also recommended that you recalculate the potential energy and dipole moment of your full set of walkers to reuse
+for the full calculation.
 
 ### Calculating GSPA Frequencies and Intensities with q Coordinates
 
