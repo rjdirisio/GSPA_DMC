@@ -36,7 +36,7 @@ All this is the actual GSPA approximation, and the source for this code is in `G
 Next, there is a general utilities directory that helps the user perform symmetry operations efficiently and also 
 hook the internal coordinates into the code, which is in `GSPA_DMC/GSPA_DMC/utils`.  Finally, the analysis part of 
 the code will plot the transitions using stick spectra with Gaussian convolution (optional). This is also where the 
-couplings bewteen states are incorporated, and the final spectra coan be plotted as well. The source for this portion 
+couplings between states are incorporated, and the final spectra can be plotted as well. The source for this portion 
 of the code is in `GSPA_DMC/GSPA_DMC/analysis_src/`
 
 ### What is needed to use this package
@@ -48,11 +48,16 @@ coordinates must be in atomic units. **NOTE** if you are using `PyVibDMC` to get
 if you get them through the `get_wfns` function. You will need to convert the coordinates to Bohr in order to pass into this code.
 
 The internal coordinate function that hooks into the code should take in just the Cartesian coordinates (in Bohr) and output the 
-internal coordinates in ()
+internal coordinates in (in Bohr/radians)
+
+The walkers should all be rotated into an Eckart frame (or something similar) and the dipole moments should be calculated
+ in this frame as well. The rotated coordinates (and dipoles) are what should be the input to the code. The potential
+energy should also be calculated where the zero in energy is the global minimum of the potential energy surface for the
+system.
 
 # How to use the package
 
-While there are many portions of this package, there are only a few classses/functions you should need to use this code. Everything else is "under the hood"!
+While there are many portions of this package, there are only a few classes/functions you should need to use this code. Everything else is "under the hood"!
 
 ## Example Run Scripts
 
@@ -194,7 +199,7 @@ If `save_nms` is set to `False`, the q coordinates will not be saved (not recomm
 
 From this run, you will get three files: `res_dir/assignments.txt`, `res_dir/nms.npy`, and `res_dir/trans_mat.npy`,
 which correspond to a list of the the linear combinations of mass-weighted internal coordinates that compose the q coordinates,
-the q coordinates themselves, and then transformation matrix that takes you from modified internals (r-<r>) to q coordinates.
+the q coordinates themselves, and then transformation matrix that takes you from modified internals (r-avg(r)) to q coordinates.
 
 The q coordinate file is the only essential file for the rest of the code, but the assignments are there to 
 see if the q coordinates are coming out clean.
@@ -235,7 +240,7 @@ you need:
 3. The dipole moment of each walker, `num_walkers x 3`
 
 If you just want to calculate energies, you can pass in a dipole array that is simply zeros or ones (`np.zeros` or `np.ones`) 
-and the length of your potential energy array.
+and the length of your potential energy array. 
 
 ```python
 import GSPA_DMC as gspa
