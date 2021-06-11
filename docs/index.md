@@ -60,7 +60,7 @@ While there are many portions of this package, there are only a few classses/fun
 
 We will use H3O+ as a testing ground for this code. We will start by making a function that defines 3N-6 = 6 internal coordinates for hydronium:
 
-```
+```python
 # h3o_internals.py
 import numpy as np
 from pyvibdmc.analysis import *
@@ -72,7 +72,7 @@ def umbrella_angle(cds, center, outer_1, outer_2, outer_3):
     out_1 = cds[:, outer_1]
     out_2 = cds[:, outer_2]
     out_3 = cds[:, outer_3]
-    get vector pointing along OH bond
+    # get vector pointing along OH bond
     vec_1 = np.divide((out_1 - cen), la.norm(out_1 - cen, axis=1)[:, np.newaxis])  # broadcasting silliness
     vec_2 = np.divide((out_2 - cen), la.norm(out_2 - cen, axis=1)[:, np.newaxis])
     vec_3 = np.divide((out_3 - cen), la.norm(out_3 - cen, axis=1)[:, np.newaxis])
@@ -118,7 +118,7 @@ def h3o_internals(cds):
 The code should return the internal coordinates in shape `(num_walkers x three_n_minus_6)`. See above for a good example.
 To have the `GSPA_DMC` code recognize the function `h3o_internals` we use the `InternalCoordinateManager` in the `utils` subpackage:
 
-```
+```python
 import GSPA_DMC as gspa
 h3o_internals = gspa.InternalCoordinateManager(
     int_function='h3o_internals',
@@ -129,7 +129,7 @@ h3o_internals = gspa.InternalCoordinateManager(
 
 Now we have a `InternalCoordinateManager` object that we will pass to `NormalModes` for running.
 
-```
+```python
 import GSPA_DMC as gspa
 nm = gspa.NormalModes(res_dir='test_h3o',
                     atoms=['H', 'H', 'H', 'O'],
@@ -144,7 +144,7 @@ Now that we have everything set up, we will now calculate the q coordinates in t
 part, calculating the G-Matrix through numerical differentiation.  Once the G-Matrix is constructed, we can
 use it and the second moments matrix to get the q coordinates.
 
-```
+```python
 import GSPA_DMC as gspa
 nm = gspa.NormalModes(res_dir='test_h3o',
                     atoms=['H', 'H', 'H', 'O'],
@@ -167,7 +167,7 @@ This can be an absolute or relative path to the directory of interest. If the di
 `calc_gmat()` also returns the internal coordinates. At this point, you can project these `Psi^2` onto one of these 
 internal coordinates to see how they look:
 
-```
+```python
 from pyvibdmc.analysis import AnalyzeWfn, Plotter
 internals = h3o_internals.get_ints(cds)
 int_names = h3o_internals.get_int_names()
@@ -180,7 +180,7 @@ for i_num, name in enumerate(int_names):
 
 Once the G-Matrix is calculated, you can then use it and the internal coordinates to calculate the q coordinates:
 
-```
+```python
 gmat = np.load("test_h3o/gmat.npy") # gmat was saved according to res_dir
 # Internal coords were NOT saved since it could be a large file.
 # Instead, you can manually save them or rerun h3o_internals.get_ints(cds)
@@ -209,7 +209,7 @@ sure that it doesn't mater which hydrogen is called "1" or "2" or "3". The proje
 OH bond lengths should look _exactly_ like the other two. The way to do this is swap what is called "1" with "2", 
 "2" with "3", and "1" with "3" and so on. GSPA_DMC has a built in `Symmetrize` object that can help with this process:
 
-```
+```python
 # new_cds is 2x the size of cds
 # Copy, then swap atom 0 with atom 1
 new_cds, new_dws = symm.swap_two_atoms(cds, dws, atm_1=0,atm_2=1)
@@ -237,7 +237,7 @@ you need:
 If you just want to calculate energies, you can pass in a dipole array that is simply zeros or ones (`np.zeros` or `np.ones`) 
 and the length of your potential energy array.
 
-```
+```python
 import GSPA_DMC as gspa
 q_coords = np.load("test_h3o/nms.npy")
 my_gspa = gspa.GSPA(res_dir='test_h3o',
@@ -268,7 +268,7 @@ the mode is only excited in one mode, which is the first number.**
 
 To load the binary `.npz` files:
 
-```
+```python
 import numpy as np
 a = np.load("res_dir/energies.npz")
 # Then use one of the keys to get the numpy array you want
@@ -280,7 +280,8 @@ fundamental_transition_energies = a['funds']
 Yay! You made it this far. You now have results you'd like to plot. You can select which subset of frequencies and
 intensities to load, but it is recommended to simply combine all transitions to plot:
 
-```
+```python
+import GSPA_DMC as gspa
 # All the keys for the .npz files
 keyz = ['funds', 'overs', 'combos']
 np_e = np.load("test_h3o/energies.npz")
@@ -295,7 +296,7 @@ energies = np.concatenate(energies)
 intensities = np.concatenate(intensities)
 
 # Declare PlotSpectrum object
-plottie = PlotSpectrum(energies=energies,
+plottie = gspa.PlotSpectrum(energies=energies,
                        intensities=intensities,
                        plt_energy_range=[0, 6000],
                        gauss_width=50,
@@ -324,13 +325,13 @@ states with corresponding energies and intensities that are linear combinations 
 
 In order to do this, we use the `MixedStates` object
 
-```
+```python
     assignments = np.load('test_h3o/assign_order.npy')
     red_stuff = np.load("test_h3o/red_ham/ov_ham.npz")
     overlap_mat = red_stuff['ov']
     ham_mat = red_stuff['ham']
     dipole_matels = red_stuff['mus']
-    my_mix = MixedStates(res_dir='sample',
+    my_mix = gspa.MixedStates(res_dir='sample',
                          overlap_mat=overlap_mat,
                          ham_mat=ham_mat,
                          assignments=assignments,
@@ -355,8 +356,8 @@ of the eigenvectors of the generalized eigenvalue problem used to solve for the 
 
 Finally, we can plot the mixed states as a different color on the same plot as the unmixed states.
 
-```
-    plottie = PlotSpectrum(energies=new_freqs,
+```python
+    plottie = gspa.PlotSpectrum(energies=new_freqs,
                  intensities=new_intensities,
                  plt_energy_range=[0,6000],
                  gauss_width=50,
